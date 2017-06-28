@@ -1,0 +1,289 @@
+---
+title: "Forecasting Section 2.8"
+author: "Seema Rani Kanuri"
+date: "April 15, 2017"
+output: html_document
+---
+
+
+
+
+#Question 1:
+For each of the following series (from the fma package), make a graph of the data. If transforming seems appropriate, do so and describe the effect.
+
+
+##a. Monthly total of people on unemployed benefits (dole)
+
+```{r setup, include=FALSE}
+#Including the required library dole - Unemployment benefits in Australia 
+
+library(fma)
+```
+
+```{r}
+summary(dole)
+```
+
+```{r}
+par(mfrow=c(2,1))
+plot(dole, main="Fig 1 : Monthly unemployment benefits")
+plot(log(dole), main="Fig 2 : Log transformed unemployment benefits")
+lambda <- BoxCox.lambda(dole)
+lambda
+```
+
+```{r}
+par(mfrow=c(1,1))
+plot(BoxCox(dole,lambda), main="Fig 3 : Box-Cox transformed unemployment benefits")
+```
+
+Transformations: 
+Looking into the trasnformations it seems Monthly total of people on unemployed benefits (dole) of the Log and Box Cox transformation improve the distinction of the variation in the plots. Log transformation appears to be better transformation than the Box Cox.
+
+### b. Monthly total of accidental deaths in the United States (January 1973-December 1978).
+
+```{r}
+#usdeaths - Accidental deaths in USA  
+summary(usdeaths)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(usdeaths, main="Fig 4: Monthly Accidental Deaths in the US")
+plot(log(usdeaths), main="Fig 5 : Log Transformed Accidental Deaths")
+lambda2 <- BoxCox.lambda(usdeaths)
+plot(BoxCox(usdeaths,lambda2), main = "Fig 6: Box-Cox transformed Accidental Deaths")
+plot(sqrt(usdeaths), main = "Fig 7 SQRT transformed Accidental Deaths")
+```
+
+```{r}
+lambda2
+```
+
+###Transformations:
+Looking into the trasnformations it seems Monthly total of accidental deaths in the United States are similar variation in the accidental deaths
+
+
+###c. Quarterly production of bricks (in millions of units) at Portland, Australia (March 1956-September 1994).
+
+```{r}
+#bricksq - Quarterly clay brick production
+
+summary(bricksq)
+```
+
+```{r}
+par(mfrow=c(2,1))
+plot(bricksq, main="Fig 8: Quarterly Brick Production")
+plot(log(bricksq), main = "Fig 9: Log Transformed Brick Production")
+lambda3 <- BoxCox.lambda(bricksq)
+lambda3
+```
+
+```{r}
+plot(BoxCox(bricksq,lambda3), main = "Fig 10:Box-Cox Brick Production")
+plot(sqrt(bricksq), main = "Fig 11:SQRT transformed Brick Production")
+```
+
+###Transformations: 
+Looking into the trasnformations it seems Quarterly production of bricks (in millions of units) at Portland, Australia are similar to the accidentral deaths .
+
+
+
+#Question 2:
+Use the Dow Jones index (data set dowjones) to do the following
+
+###a. Produce a time plot of the series.
+
+```{r}
+par(mfrow=c(2,2))
+plot(dowjones, main="Fig 12: Dow Jones Index")
+plot(log(dowjones), main = "Fig 13: Log DJI")
+plot(sqrt(dowjones), main = "Fig 14: SQRT")
+```
+
+
+##b. Produce forecasts using the drift method and plot them.
+
+```{r}
+dowjones_drift <- rwf(dowjones , h=10, drift=TRUE)
+dowjones_drift_log <- rwf(log(dowjones), h = 10, drift = TRUE)
+dowjones_drift_sqrt <- rwf(sqrt(dowjones), h =10, drift = TRUE)
+par(mfrow=c(2,2))
+
+plot(dowjones_drift,plot.conf=FALSE,main="Fig 15: Drift Method Dow Jones", ylab="Index",xlab="Year")
+legend("topleft",lty=1, col=c(4),legend=c("SQRT"))
+plot(dowjones_drift_log,plot.conf=FALSE,main="Fig 16: Log Method Dow Jones", ylab="Index",xlab="Year")
+legend("topleft",lty=1, col=c(4),legend=c("Log"))
+plot(dowjones_drift_sqrt,plot.conf=FALSE,main="Fig 17:SQRT Method Dow Jones", ylab="Index",xlab="Year")
+legend("topleft",lty=1, col=c(4),legend=c("Drift"))
+```
+
+##c. Show that the graphed forecasts are identical to extending the line drawn between the first and last observations.
+
+```{r}
+dj_first_last <- window(dowjones, start=1, end=66-.1)
+dj_first_last_mean <- meanf(dj_first_last,h=12)
+dj_first_last_1 <- rwf(dj_first_last,h=12)
+dj_first_last_2 <- rwf(dj_first_last,h=12, drift = TRUE)
+plot(dj_first_last_mean, plot.conf=FALSE, main="Fig 19:Dow Jones Index", xlim=c(1,78))
+lines(dj_first_last_1$mean,col=2)
+lines(dj_first_last_2$mean,col=3)
+lines(dowjones)
+legend("topleft", lty=1, col=c(4,2,3), legend=c("Mean ","Naive","Drifit"))
+```
+
+###Forecasts: 
+It depends on where the forecast begins and the upward/downward trend that is ocurring and it seems here the forecasts are not identical. 
+
+
+##d. Try some of the other benchmark functions to forecast the same data set. Which do you think is best? Why?
+
+```{r}
+par(mfrow=c(1,1))
+dowjones_drift <- rwf(dowjones , h=24, drift=TRUE)
+dowjones_drift_mean <-meanf(dowjones, h=42)
+dowjones_drift_naive <-naive(dowjones, h=42)
+
+plot(dowjones_drift,plot.conf=FALSE,main="Fig 20: Drift Method Dow Jones", ylab="Index",xlab="Year")
+
+lines(dowjones_drift_mean$mean, col=2)
+lines(dowjones_drift_naive$mean, col=3)
+legend("topleft",lty=1, col=c(4,2,3),legend=c("Mean Method","Naive Method","Drift"))
+```
+
+###Forecasts: 
+Compairing thr Mean and Naive method which are more static statistics the drift method shows good improvement probabily because of the upward/downward trend.
+
+
+#Question 3:
+Use the Dow Jones index (data set dowjones) to do the following:
+
+##a. Produce some plots of the data in order to become familiar with it.
+```{r}
+head(ibmclose)
+```
+
+
+```{r}
+summary(ibmclose)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(ibmclose)
+qqnorm(ibmclose)
+qqline(ibmclose)
+plot(log(ibmclose))
+plot(sqrt(ibmclose))
+```
+
+
+##b. Split the data into a training set of 300 observations and a test set of 69 observations.
+
+```{r}
+ibm_close_train <- window(ibmclose ,end=300)
+ibm_close_test <- window(ibmclose ,start=301)
+```
+
+
+##c. Try various benchmark methods to forecast the training set and compare the results on the test set. Which method did best?
+
+```{r}
+par(mfrow=c(1,1))
+ibm_close_avg <- meanf(ibm_close_train,h=54)$mean
+ibm_close_naive <- naive(ibm_close_train ,h=54)$mean
+ibm_close_drift <- rwf(ibm_close_train ,drift=TRUE,h=54)$mean
+
+plot(ibm_close_train,main="Fig 21: IBM Close Prices",xlab="Day",ylab="Price")
+
+lines(ibm_close_naive,col=2)
+lines(ibm_close_avg,col=4)
+lines(ibm_close_drift,col=3)
+lines(ibm_close_test,col=8)
+
+legend("topleft",lty=1,col=c(4,2,3),
+  legend=c("Mean Method","Naive Method","Drift Method"))
+```
+
+
+```{r}
+plot(ibm_close_train,main="Fig 22 : IBM Close Prices", ylab="Price",xlab="Day", xlim=c(250,369), ylim=c(300,425))
+lines(ibm_close_naive,col=2)
+lines(ibm_close_avg,col=4)
+lines(ibm_close_drift,col=3)
+lines(ibm_close_test,col=8)
+
+legend("topleft",lty=1,col=c(4,2,3),
+  legend=c("Mean Method","Naive Method","Drift Method"))
+```
+
+###Forecasts: 
+Compairing thr Mean and Naive method which are more static statistics the drift method shows good improvement probabily because of the upward/downward trend.
+
+#Question 4:
+Consider the sales of new one-family houses in the USA, Jan 1973 - Nov 1995 (data set hsales).
+
+##a. Produce some plots of the data in order to become familiar with it.
+
+```{r}
+head(hsales)
+```
+
+
+```{r}
+summary(hsales)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(hsales)
+qqnorm(hsales)
+qqline(hsales)
+plot(log(hsales))
+acf(hsales)
+```
+
+##b. Split the hsales data set into a training set and a test set, where the test set is the last two years of data.
+
+```{r}
+hsales_timeseries <- ts(hsales,start=1,end=275)
+hsales_timeseries_train <- window(hsales_timeseries,end=251)
+hsales_timeseries_test <- window(hsales_timeseries,start=251)
+```
+
+
+##c. Try various benchmark methods to forecast the training set and compare the results on the test set. Which method did best?
+
+```{r}
+par(mfrow=c(1,1))
+hsales_timeseries_avg <- meanf(hsales_timeseries_train,h=24)$mean
+hsales_timeseries_naive <- naive(hsales_timeseries_train,h=24)$mean
+hsales_timeseries_drift <- rwf(hsales_timeseries_train,drift=TRUE,h=24)$mean
+
+plot(hsales_timeseries_train,main="Fig 23: House Sales",xlab="Month",ylab="Price")
+
+lines(hsales_timeseries_naive,col=2)
+lines(hsales_timeseries_avg,col=4)
+lines(hsales_timeseries_drift,col=3)
+lines(hsales_timeseries_test,col=8)
+
+legend("topleft",lty=1,col=c(4,2,3),
+  legend=c("Mean Method","Naive Method","Drift Method"))
+```
+
+
+```{r}
+plot(hsales_timeseries_train,main="House sales", ylab="House Sales",xlab="Month", xlim=c(240,275), ylim=c(35,75))
+
+lines(hsales_timeseries_naive,col=2)
+lines(hsales_timeseries_avg,col=4)
+lines(hsales_timeseries_drift,col=3)
+lines(hsales_timeseries_test,col=8)
+
+legend("topleft",lty=1,col=c(4,2,3), legend=c("Mean Method","Naive Method","Drift Method"))
+```
+
+###Forecasts: 
+The seasonal naive method performs the best.Mean method is bad than the Drift and the Naive method. The variability in the data is making the forcasts unable to be reliable results. Also the Drift and Naive method are producing nearly indistinguishable results.
+

@@ -1,0 +1,223 @@
+---
+title: "Forecasting Section 4.10"
+author: "Seema Rani Kanuri"
+date: "April 17, 2017"
+output: html_document
+---
+
+#Question 1:
+Electricity consumption was recorded for a small town on 12 randomly chosen days. The following maximum temperatures (degrees Celsius) and consumption (megawatt-hours) were recorded for each day.
+
+
+```{r setup, include=FALSE}
+#Including the required library
+library(fma)
+```
+
+```{r}
+econsumption
+```
+
+
+##a. Plot the data and find the regression model for Mwh with temperature as an explanatory variable. Why is there a negative relationship?
+
+```{r}
+plot(Mwh ~ temp, data = econsumption, main = "Fig 1: Econsumption")
+fit = lm(formula = Mwh  ~ temp, data = econsumption)
+abline(fit, col=5)
+```
+
+```{r}
+summary(fit)
+```
+
+###Negative Relationship: 
+The above plot shows the neagtive relationships where with the temperature increases leads in decreasing the amount of electricity used. There can be many reasons like Air conditioning. It probabily be like in the small town the temperature is less which recuces the use of the AC in their home. Also the vice versa, the home can consune less power when it's warm so less amount oif electricity is used.
+
+
+##b. Produce a residual plot. Is the model adequate? Are there any outliers or influential observations?
+
+```{r}
+par(mfrow=c(2,2))
+plot(fit)
+```
+
+###Adequacy and Outliers: 
+The model appears to be a great fit to the data majority of residuals lie between 1 and -1.Based on the QQ-plot and the Residuals vs the Fitted observation it seems There is one outlier.Besides that data point, the observations fit the assumptions of normality fairly- there is linearity in the QQ plot as well as the residuals vs fitted show nearly constant variance. .
+ 
+
+
+
+##c. Use the model to predict the electricity consumption that you would expect for a day with maximum temperature 10 and a day with maximum temperature 35. Do you believe these predictions?
+
+```{r}
+coeffs = coefficients(fit)
+pred_temp = c(10, 35)
+p_temp = coeffs[1] + coeffs[2]*pred_temp 
+p_temp
+```
+
+###Predictions: 
+The predictions seems to be in the general trend of the model there may be issues with normality as we are basing this on less than data 30 points.
+
+
+##d. Give prediction intervals for your forecasts.
+
+```{r}
+par(mfrow=c(2,1))
+fcast <- forecast(fit, newdata=data.frame(temp=10))
+plot(fcast, xlab="temp", ylab="Mwh")
+fcast2 <- forecast(fit, newdata=data.frame(temp=35))
+plot(fcast2, xlab="temp", ylab="Mwh")
+```
+
+
+```{r}
+temp10 = data.frame(temp=10)
+temp35 = data.frame(temp=35)
+predict(fit, temp10, interval="predict") 
+```
+
+
+```{r}
+predict(fit, temp35, interval="predict") 
+```
+
+#Question 2:
+The following table gives the winning times (in seconds) for the men's 400 meters final in each Olympic Games from 1896 to 2012 (data set olympic).
+
+##a. Update the data set olympic to include the winning times from the last few Olympics.
+
+```{r}
+par(mfrow=c(1,1))
+olympic1 <- matrix(c(1896, 54.2, 1900, 49.4, 1904, 49.2, 1908, 50, 1912 , 48.2, 1920 , 49.6, 1924 , 47.6 , 1928 , 47.8, 1932, 46.2, 1936, 46.5, 1948, 46.2, 1952, 45.9, 1956, 46.7, 1960, 44.9, 1964, 45.1, 1968, 43.8 , 1972, 44.66, 1976, 44.26, 1980, 44.6, 1984, 44.27, 1988 , 43.87 , 1992, 43.5, 1996 , 43.49 , 2000, 43.84 , 2004, 44, 2008, 43.75, 2012, 43.94, 2016 , 43.03) ,ncol=2,byrow=TRUE)
+colnames(olympic1) <- c("Year","time")
+olympic_ts <- ts(olympic1,start=1,end=28)
+```
+
+
+##b. Plot the winning time against the year. Describe the main features of the scatterplot.
+
+```{r}
+par(mfrow=c(1,1))
+plot(time ~ Year, data = olympic_ts, main = "Fig 2:Olympic Gold Medal Times")
+```
+
+###Scatterplot: 
+There is a downward trend throughout the period. The biggest time reduction was achieved at the start.he first observation appears to be an outlier where the winner ran the 400M in 54.2 seconds. There continues to be a downward trend until 1992 at time of  49.65 seconds. 
+
+
+##c. Fit a regression line to the data. Obviously the winning times have been decreasing, but at what average rate per year?
+
+```{r}
+par(mfrow=c(1,1))
+fit1 = lm(formula = time  ~ Year, data = olympic_ts)
+plot(time ~ Year, data = olympic_ts, main = "Fig 3 :Olympic Gold Medal Times")
+abline(fit1, col=5)
+```
+
+
+```{r}
+summary(fit1)
+```
+
+Decreasing Rate: The 400M time is decreasing at an average rate of .065 per 4 years.
+
+
+##d. Plot the residuals against the year. What does this indicate about the suitability of the fitted line?
+
+```{r}
+par(mfrow=c(1,1))
+plot(fit1)
+```
+
+###Suitability: 
+The model appears to be a great fit to the data. Based on the QQ-plot and the Residuals v Fitted observation 1 appears to be an outliers. Besides that data point, the observations fit the assumptions of normality fairly- there is linearity in the QQ plot as well as the residuals vs fitted demonstrating nearly constant variance. However, due to the limited number of observations x<30 this may be a suspect sample size.
+
+
+##e. Predict the winning time for the men's 400 meters final in the 2000, 2004, 2008 and 2012 Olympics. Give a prediction interval for each of your forecasts. What assumptions have you made in these calculations?
+
+```{r}
+coeffs1 = coefficients(fit1)
+pred_time = c(2000, 2004, 2008, 2012)
+p_time = coeffs1[1] + coeffs1[2]*pred_time
+p_time
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+fcast3 <- forecast(fit1, newdata=data.frame(Year=2000))
+plot(fcast3, xlab="Year", ylab="time")
+fcast4 <- forecast(fit1, newdata=data.frame(Year=2004))
+plot(fcast4, xlab="Year", ylab="time")
+fcast5 <- forecast(fit1, newdata=data.frame(Year=2008))
+plot(fcast5, xlab="Year", ylab="time")
+fcast6 <- forecast(fit1, newdata=data.frame(Year=2012))
+plot(fcast6, xlab="Year", ylab="time")
+```
+
+
+```{r}
+time2000 = data.frame(Year=2000)
+time2004 = data.frame(Year=2004)
+time2008 = data.frame(Year=2008)
+time2012 = data.frame(Year=2012)
+predict(fit1, time2000, interval="predict") 
+```
+
+
+```{r}
+predict(fit1, time2004, interval="predict") 
+```
+
+
+```{r}
+predict(fit1, time2008, interval="predict") 
+```
+
+```{r}
+predict(fit1, time2012, interval="predict") 
+```
+
+###Assumptions: 
+The underlying assumption about these calculations is that the underlying distribution is a normal distribution. The 95% predictive interval provides an acceptable range where the actual winning times may fit.Our predictions were overly optimistic.
+
+
+##f. Find out the actual winning times for these Olympics (see www.databaseolympics.com). How good were your forecasts and prediction intervals?
+
+
+```{r}
+coeffs1 = coefficients(fit1)
+pred_time = c(2000, 2004, 2008, 2012)
+p_time = coeffs1[1] + coeffs1[2]*pred_time
+p_time
+```
+
+
+```{r}
+olympic_ts[24:27,2]
+```
+
+###Forecast/Prediction Intervals: 
+After the year 2000, the forecasts become increasingly inaccurate. The model was unable to account for the plateau that would occur around 43.65 seconds. The actual winning times were within the predictive intervals.
+
+
+
+#Question 3:
+An elasticity coefficient is the ratio of the percentage change in the forecast variable (y) to the percentage change in the predictor variable (x). Mathematically, the elasticity is defined as (dy/dx)×(x/y)(dy/dx)×(x/y). Consider the log-log model, logy=B0+B1logx+e.
+
+Express y as a function of x and show that the coefficient B1 is the elasticity coefficient.
+
+
+logy=B0+B1logx+e
+
+take differential, assuming other variables are constant
+
+dy/y = dx/x*B1 (dy/y / dx/x) = B1
+
+change in y divided by y over the the change in x divided by x
+
+percentage in y over the percentage change in x B1 is elasticity- the partial elasticity of the dependent variable with respect to the independent variable, ie percentage increase in the dependent variable with the percentage increase in the independent variable.
+
+100(dy/y) = 100(dx/x)B1 % change y = % change x B1

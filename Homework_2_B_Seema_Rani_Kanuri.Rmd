@@ -1,0 +1,387 @@
+---
+title: "Forecasting Section 7.8"
+author: "Seema Rani Kanuri"
+date: "May 01, 2017"
+output: html_document
+---
+
+
+#Question 1:
+Data set books contains the daily sales of paperback and hardcover books at the same store. The task is to forecast the next four days' sales for paperback and hardcover books (data set books).
+
+
+###a. Plot the series and discuss the main features of the data.
+
+```{r setup, include=FALSE}
+#Including the required library dole - Unemployment benefits in Australia 
+
+library(knitr)
+library(fpp)
+
+```
+
+```{r}
+books <- books
+plot(books)
+```
+Both types of book have a positive trend and both show fairly large fluctations in daily sales. This may be due to sales spiking at certain periods of the week, probably at weekends.
+
+
+
+
+### b. Use simple exponential smoothing with the ses function (setting initial="simple") and explore different values of ???? for the paperback series. Record the within-sample SSE for the one-step forecasts. Plot SSE against ???? and find which value of ???? works best. What is the effect of ???? on the forecasts?
+
+```{r}
+pb <- books[,1]
+```
+
+```{r}
+fit1 <- ses(pb, initial='simple', varalpha=0.2, h=3)
+sum((pb - fitted(fit1))) #51.94
+fit2 <- ses(pb, initial='simple', varalpha=0.4, h=3)
+sum((pb - fitted(fit2))) #50.28
+fit3 <- ses(pb, initial='simple', varalpha=0.6, h=3)
+sum((pb - fitted(fit3))) #47.45
+fit4 <- ses(pb, initial='simple', varalpha=0.8, h=3)
+sum((pb - fitted(fit4))) #46.67
+fit5 <- ses(pb, initial='simple', varalpha=0.9, h=3)
+sum((pb - fitted(fit5))) #47.10 - previous sse was smaller so choose smaller varalpha.
+fit6 <- ses(pb, initial='simple', varalpha=0.85, h=3)
+sum((pb - fitted(fit6))) #46.82 - previous sse was smaller so choose smaller varalpha.
+fit7 <- ses(pb, initial='simple', varalpha=0.83, h=3)
+sum((pb - fitted(fit7))) #46.74 - previous sse was smaller so choose smaller varalpha.
+fit8 <- ses(pb, initial='simple', varalpha=0.82, h=3)
+sum((pb - fitted(fit8))) #46.71 - previous sse was smaller so choose smaller varalpha.
+fit9 <- ses(pb, initial='simple', varalpha=0.81, h=3)
+sum((pb - fitted(fit9))) #46.69 - previous sse was smaller so choose smaller varalpha.
+fit10 <- ses(pb, initial='simple', varalpha=0.75, h=3)
+sum((pb - fitted(fit10))) #46.66 - new minimum found.
+fit11 <- ses(pb, initial='simple', varalpha=0.3, h=3)
+sum((pb - fitted(fit11))) #52.24
+fit12 <- ses(pb, initial='simple', varalpha=0.5, h=3)
+sum((pb - fitted(fit12))) #48.62
+fit13 <- ses(pb, initial='simple', varalpha=1, h=3)
+sum((pb - fitted(fit13))) #48
+```
+
+```{r}
+varalpha <- c(0.2, 0.4, 0.6, 0.8, 0.9, 0.85, 0.83, 0.82, 0.81, 0.75, 0.3, 0.5, 1)
+sse <- c(51.94, 50.28, 47.45, 46.67, 47.10, 46.82, 46.74, 46.71, 46.68, 46.66, 52.24, 48.62, 48)
+```
+
+```{r}
+plot(varalpha, sse)
+```
+0.75 provides the smallest SSE. Increasing varalpha from 0.2 to 0.75 provides increasing improvements in the SSE, after this minimum increasing varalpha increases SSE.
+
+
+###c. Now let ses select the optimal value of ????. Use this value to generate forecasts for the next four days. Compare your results with 2.
+
+```{r}
+fit1 <- ses(pb, initial='simple', h=4)
+fit2 <- ses(pb, initial='simple', varalpha=0.75, h=4)
+```
+
+```{r}
+par(mfrow=c(2,1))
+plot(fit1, main="Automatic varalpha")
+plot(fit2, main="Custom varalpha: 0.75")
+```
+The model SES chooses predicts lower forecasts than the previous model. The prediction intervals are also smaller for the model SES chooses.
+
+
+###d. Repeat but with initial="optimal". How much difference does an optimal initial level make?
+
+```{r}
+fit3 <- ses(pb, initial='optimal', h=4)
+sum((pb - fitted(fit3)))
+```
+The model is more pessimistic than the others and has a higher SSE.
+
+###e. Repeat steps (b)-(d) with the hardcover series.
+```{r}
+hb <- books[,2]
+```
+
+```{r}
+fit1 <- ses(hb, initial='simple', varalpha=0.8, h=3)
+sum((hb - fitted(fit1))) #142.59
+fit2 <- ses(hb, initial='simple', varalpha=0.2, h=3)
+sum((hb - fitted(fit2))) #465.09
+fit3 <- ses(hb, initial='simple', varalpha=0.9, h=3)
+sum((hb - fitted(fit3))) #129.61
+fit4 <- ses(hb, initial='simple', varalpha=0.5, h=3)
+sum((hb - fitted(fit4))) #213.47
+fit5 <- ses(hb, initial='simple', varalpha=0.95, h=3)
+sum((hb - fitted(fit5))) #124.42
+fit6 <- ses(hb, initial='simple', varalpha=0.97, h=3)
+sum((hb - fitted(fit6))) #122.56
+fit7 <- ses(hb, initial='simple', varalpha=0.99, h=3)
+sum((hb - fitted(fit7))) #120.82
+fit8 <- ses(hb, initial='simple', varalpha=1, h=3)
+sum((hb - fitted(fit8))) #120
+```
+
+```{r}
+varalpha <- c(1, 0.99, 0.97, 0.95, 0.5, 0.9, 0.2, 0.8)
+sse <- c(120, 120.82, 122.56, 124.42, 213.47, 129.61, 465.09, 142.59)
+
+```
+
+```{r}
+plot(varalpha, sse)
+```
+As varalpha increases the SSE declines with diminishing returns.
+
+```{r}
+par(mfrow=c(2,1))
+plot(fit1, main="Automatic varalpha")
+plot(fit2, main="Custom varalpha: 1")
+
+```
+Letting the SES function automatically choose varalpha gives lower point forecasts than the previous custom varalpha produced.
+
+```{r}
+fit3 <- ses(hb, initial='optimal', h=4)
+sum((hb - fitted(fit3)))
+```
+Setting the intial paramater to 'optimal' gives very similar results to 'simple'.
+
+
+#Question 2:
+Apply Holt's linear method to the paperback and hardback series and compute four-day forecasts in each case.
+
+###a. Compare the SSE measures of Holt's method for the two series to those of simple exponential smoothing in the previous question. Discuss the merits of the two forecasting methods for these data sets.
+
+```{r}
+books
+dev.off()
+fit15 <- holt(books[,1], initial = "simple", h=4)
+```
+
+```{r}
+summary(fit15)
+
+plot(books[,1], main="paperback sales", xlab="days", ylab="money", xlim=c(0,40))
+```
+
+```{r}
+#lines(fitted(fit15), col="red", type="o")
+#lines(fit15$mean, col="green", type="o")
+```
+
+```{r}
+fit15<- holt(books[,1], initial = "optimal", h=4)
+```
+
+```{r}
+summary(fit15)
+```
+
+```{r}
+plot(books[,1], main="paperback sales", xlab="days", ylab="money", xlim=c(0,40))
+lines(fitted(fit15), col="blue", type="o")
+lines(fit15$mean, col="blue", type="o")
+
+```
+
+
+
+###b. Compare the forecasts for the two series using both methods. Which do you think is best?
+
+```{r}
+plot(fit15, xlab="days", ylab= "Money")
+plot(fit15, xlab="days", ylab="money")
+
+```
+
+
+###c. Calculate a 95% prediction interval for the first forecast for each series using both methods, assuming normal errors. Compare your forecasts with those produced by R.
+```{r}
+etshb <- ets(hb)
+plot(forecast(etshb, h=4))
+
+```
+
+
+
+
+#Bonus Question
+
+
+#Question 3:
+For this exercise, use the quarterly UK passenger vehicle production data from 1977:1--2005:1 (data set ukcars).
+
+###a. Plot the data and describe the main features of the series.
+```{r}
+cars <- ukcars
+plot(ukcars)
+```
+There is a strong seasonal effect throughout the series. The trend was declining until the early 80s then it started increasing until 2000. Production recovered in a year or two.
+
+
+###b. Decompose the series using STL and obtain the seasonally adjusted data.
+
+```{r}
+decomposed <- stl(cars, s.window="periodic", robust=TRUE)
+seasonal <- decomposed$time.series[,1]
+cars_sa <- cars - seasonal
+```
+
+
+###c. Forecast the next two years of the series using an additive damped trend method applied to the seasonally adjusted data. Then reseasonalize the forecasts. Record the parameters of the method and report the RMSE of the one-step forecasts from your method.
+
+```{r}
+fit <- holt(cars_sa, h=8, damped = TRUE)
+lastyear <- rep(decomposed$time.series[110:113,"seasonal"],2)
+reseasonalized_fc <- fit$mean + lastyear
+```
+
+```{r}
+summary(fit)
+```
+
+
+###d. Forecast the next two years of the series using Holt's linear method applied to the seasonally adjusted data. Then reseasonalize the forecasts. Record the parameters of the method and report the RMSE of of the one-step forecasts from your method.
+
+```{r}
+fit2 <- holt(cars_sa, h=8)
+reseasonalized_fc <- fit$mean + lastyear
+```
+
+```{r}
+summary(fit)
+```
+
+###e. Now use ets() to choose a seasonal model for the data.
+```{r}
+fit3 <- ets(cars_sa)
+```
+
+
+###f. Compare the RMSE of the fitted model with the RMSE of the model you obtained using an STL decomposition with Holt's method. Which gives the better in-sample fits?
+```{r}
+
+```
+All models have all most identical RMSE values.
+
+###g. Compare the forecasts from the two approaches? Which seems most reasonable?
+```{r}
+predict(ets(cars_sa))
+```
+Holt's linear method appears to be the most reasonable as it shows some trend.
+
+
+#Bonus Question
+
+#Question 4:
+For this exercise, use the monthly Australian short-term overseas visitors data, May 1985--April 2005. (Data set: visitors.)
+
+###a. Make a time plot of your data and describe the main features of the series.
+
+```{r}
+plot(visitors)
+```
+There is a positive linear trend, seasonality throughout the series and increasing variance.
+
+
+###b. Forecast the next two years using Holt-Winters' multiplicative method.
+```{r}
+two_years <- hw(visitors, h=24, seasonal='multiplicative')
+```
+
+
+###c. Why is multiplicative seasonality necessary here?
+```{r}
+```
+It is necessary because the plot shows that the variance increases through the series.
+
+
+###d. Experiment with making the trend exponential and/or damped.
+```{r}
+two_years1 <- hw(visitors, h=24, seasonal='multiplicative', damped=TRUE)
+two_years2 <- hw(visitors, h=24, seasonal='multiplicative', exponential=TRUE)
+```
+
+
+###e. Compare the RMSE of the one-step forecasts from the various methods. Which do you prefer?
+```{r}
+plot(two_years,ylab="Monthly Australian visitors", plot.conf=FALSE,
+     fcol="white", xlab="Year")
+lines(fitted(two_years), col="red", lty=2)
+lines(fitted(two_years1), col="green", lty=2)
+lines(fitted(two_years2), col='blue', lty=2)
+lines(two_years$mean, type="o", col="red")
+lines(two_years1$mean, type="o", col="green")
+lines(two_years2$mean, type="o", col="blue")
+legend("topleft",lty=1, pch=1, col=1:3,
+       c("data","H-W Multiplicative", 'Damped H-W Multiplicative',
+         'H-W Exponential'))
+```
+1:  14.8295  H-W Multiplicative
+2:  14.4480  Damped H-W Multiplicative
+3:  14.4942  H-W Exponential
+
+All three models have similar RMSEs. I prefer the one with the smallest RMSE:the damped H-W multiplicative model.
+
+
+###f. Now fit each of the following models to the same data:
+
+####(i) a multiplicative Holt-Winters' method;
+```{r}
+fit1 <- holt(visitors, seasonal='multiplicative')
+```
+
+####(ii) an ETS model;
+```{r}
+fit2 <- ets(visitors)
+```
+
+####(iii) an additive ETS model applied to a Box-Cox transformed series;
+```{r}
+lambda <- BoxCox.lambda(visitors)
+boxcox_visitors <- BoxCox(visitors, lambda)
+fit3 <- ets(boxcox_visitors, model='AAZ')
+```
+
+####(iv) a seasonal naive method applied to the Box-Cox transformed series;
+```{r}
+fit4 <- snaive(boxcox_visitors)
+```
+
+####(v) an STL decomposition applied to the Box-Cox transformed data followed by an ETS model applied to the seasonally adjusted (transformed) data.
+```{r}
+decomposed <- decompose(boxcox_visitors)
+seasonal_visitors <- decomposed$seasonal
+
+fit5 <- ets(seasonal_visitors)
+
+```
+
+
+##g. For each model, look at the residual diagnostics and compare the forecasts for the next two years. Which do you prefer?
+```{r}
+plot((fitted(fit1)), residuals(fit1))
+# Unbiased and heteroskedastic.
+
+plot((fitted(fit2)), residuals(fit2))
+# Unbiased and homoskedastic.
+
+plot((fitted(fit3)), residuals(fit3))
+# Slightly biased and borderline heteroskedastic.
+
+plot((fitted(fit4)), residuals(fit4))
+# Biased and heteroskedastic.
+
+plot((fitted(fit5)), residuals(fit5))
+# Biased and heteroskedastic.
+
+plot(forecast(fit1, h=10))
+plot(forecast(fit2, h=10))
+
+
+```
+The second model (ETS) has the best looking residual plot and it's forecasts appear plausible (as does fit 1 but fit 1 has heteroskedasticity present in the residuals.)
+
+
+

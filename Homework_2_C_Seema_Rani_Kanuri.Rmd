@@ -1,0 +1,220 @@
+---
+title: "Forecasting Section 8.11"
+author: "Seema Rani Kanuri"
+date: "May 3, 2017"
+output: html_document
+---
+
+
+#Question 5:
+Use R to simulate and plot some data from simple ARIMA models.
+
+###a. Use the following R code to generate data from an AR(1) model with ??1=0.6??1=0.6 and ??2=1??2=1. The process starts with y0=0y0=0.
+```{r}
+library(fpp)
+library(knitr)
+```
+
+```{r}
+Alpha <- ts(numeric(100))
+Beta<- rnorm(100)
+for(i in 2:100)
+  Alpha[i] <- 0.6*Alpha[i-1] + Beta[i]
+```
+
+
+
+
+###b. Produce a time plot for the series. How does the plot change as you change ??1??1?
+```{r}
+plot(Alpha, main="TIMESERIES GRAPH", xlab="time")
+Gamma <- function(n.obs, phi, seed.nr){
+  set.seed(seed.nr)
+  Alpha <- ts(numeric(n.obs))
+  Beta <- rnorm(n.obs)
+  for (i in 2:n.obs)
+    Alpha[i] <- phi*Alpha[i-1] + Beta[i]
+  return(Alpha)
+}
+```
+
+```{r}
+plot(Gamma(100, 0.9, 2), main= "time series", xlab="times")
+lines(Gamma(100, 0.9, 2), col="green")
+```
+
+
+
+###c. Write your own code to generate data from an MA(1) model with ??1=0.6??1=0.6 and ??2=1??2=1.
+```{r}
+Charlie <- function(n.obs, theta, seed.nr){
+  set.seed(seed.nr)
+  Alpha <- ts(numeric(n.obs))
+  Beta <- rnorm(n.obs)
+  for (i in 2:n.obs)
+    Alpha[i] <- theta*Alpha[i-1] + Beta[i]
+  return(Alpha)
+}
+```
+
+
+
+##d. Produce a time plot for the series. How does the plot change as you change ??1??1?
+```{r}
+plot(Charlie(100, 0.6, 2), main="time series", xlab="time")
+```
+
+
+###e. Generate data from an ARMA(1,1) model with ??1??1 = 0.6 and ??1=0.6??1=0.6 and ??2=1??2=1.
+```{r}
+Xulu <- function(n.obs, theta, seed.nr){
+  set.seed(seed.nr)
+  Alpha <- ts(numeric(n.obs))
+  Beta <- rnorm(n.obs)
+  for (i in 2:n.obs)
+    Alpha[i] <- phi*Alpha[i-1] + theta*Beta[i-1] + Beta[i]
+  return(Alpha)
+}
+```
+
+
+
+###f. Generate data from an AR(2) model with ??1=???0.8??1=???0.8 and ??2=0.3??2=0.3 and ??2=1??2=1. (Note that these parameters will give a non-stationary series.)
+```{r}
+Echo <- function(n.obs, phi1, phi2, seed.nr){
+  set.seed(seed.nr)
+  Alpha <- ts(numeric(n.obs))
+  Beta <- rnorm(n.obs)
+  for(i in 3: n.obs)
+    Alpha[i] <- phi1*Alpha[i-1] + phi2*Alpha[i-2] + Beta[i]
+  return(Alpha)
+}
+```
+
+```{r}
+plot(Echo(100, -0.9, 0.3, 2), main="timeseries", xlab="time")
+```
+
+
+
+###g. Graph the latter two series and compare them.
+
+```{r}
+par(mfrow=c(2,1))
+plot(Charlie(100, 0.6, 2), main="time series", xlab="time")
+plot(Echo(100, -0.9, 0.3, 2), main="timeseries", xlab="time")
+dev.off()
+```
+
+
+
+#Question 6;
+Consider the number of women murdered each year (per 100,000 standard population) in the United States (data set wmurders).
+
+###a. By studying appropriate graphs of the series in R, find an appropriate ARIMA(p,d,qp,d,q) model for these data.
+```{r}
+data(wmurders)
+tsdisplay(wmurders)
+Alpha1 <- diff(wmurders)
+tsdisplay(Alpha1)
+adf.test(Alpha1)
+kpss.test(Alpha1)
+```
+
+```{r}
+wmurders.d2 <- diff(diff(wmurders))
+
+tsdisplay(wmurders.d2)
+adf.test(wmurders.d2)
+kpss.test(wmurders.d2)
+```
+
+```{r}
+test.arima <- function(t.series, order){
+  Alpha3 <- data.frame(model=paste0("ARIMA(",paste0(order, collapse=","), ")"),AICc=Arima(t.series, order=order)$aicc)
+  return(Alpha3)
+}
+Alpha2 <- expand.grid(c(0, 1, 2),c(1, 2),c(0, 1, 2))
+Alpha3.list <- apply(Alpha2, MARGIN=1, FUN=function(x) {test.arima(wmurders, x)})
+Alpha3 <- do.call(rbind, Alpha3.list)
+kable(Alpha3)
+```
+
+```{r}
+Alpha4 <- Arima(wmurders, order=c(0, 1, 2))
+tsdisplay(residuals(Alpha4), lag.max=20)
+Box.test(residuals(Alpha4), lag=24, fitdf=4, type="Ljung")
+```
+
+
+
+
+###b. Should you include a constant in the model? Explain.
+```{r}
+
+```
+No. A constant introduces drift into the model, which we do not appear to have in these data.
+
+
+
+
+###c. Write this model in terms of the backshift operator.
+```{r}
+
+```
+$$ (1 - B)^2 y_t = (1 + \theta_1B + \theta_2B^2)e_t$$
+
+
+
+###d. Fit the model using R and examine the residuals. Is the model satisfactory?
+```{r}
+Alpha4 <- Arima(wmurders, order=c(0, 1, 2))
+tsdisplay(residuals(Alpha4), lag.max=20)
+```
+
+
+
+
+###e. Forecast three times ahead. Check your forecasts by hand to make sure you know how they have been calculated.
+```{r}
+Forecast <- forecast(Alpha4, h=3)
+Forecast$mean
+toforecast <- 3
+
+Alpha5 <- Alpha4$x
+Alpha6 <- Alpha4$residuals
+theta1 <- as.numeric(Alpha4$coef['ma2'])
+theta2 <- as.numeric(Alpha4$coef['ma1'])
+```
+
+```{r}
+for (h in 1:toforecast){
+  n <- length(Alpha5)
+  Alpha7 <- 2 * Alpha5[n] - Alpha5[n - 1] + theta1 * Alpha6[n] + theta2 * Alpha6[n - 1]
+  Alpha5 <- c(Alpha5, Alpha7)
+  Alpha6 <- c(Alpha6, 0)
+}
+
+```
+
+```{r}
+f <- Alpha5[(length(Alpha5) - toforecast + 1):length(Alpha5)]
+
+plot(Forecast)
+lines(Alpha4$x - Alpha4$residuals, col='blue')
+points(c(2005, 2006, 2007), f, col='red')
+```
+
+
+
+###f. Create a plot of the series with forecasts and prediction intervals for the next three periods shown.
+```{r}
+plot(Forecast)
+```
+
+
+
+##sss#g. Does auto.arima give the same model you have chosen? If not, which model do you think is better?
+```{r}
+auto.arima(wmurders)
+```

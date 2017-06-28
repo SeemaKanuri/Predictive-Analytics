@@ -1,0 +1,331 @@
+---
+title: "Forecasting Section 5.8"
+author: "Seema Rani Kanuri"
+date: "April 17, 2017"
+output: html_document
+---
+
+
+#Question 1:
+The data below (data set fancy) concern the monthly sales figures of a shop which opened in January 1987 and sells gifts, souvenirs, and novelties. The shop is situated on the wharf at a beach resort town in Queensland, Australia. The sales volume varies with the seasonal population of tourists. There is a large influx of visitors to the town at Christmas and for the local surfing festival, held every March since 1988. Over time, the shop has expanded its premises, range of products, and staff.
+
+
+##a. Produce a time plot of the data and describe the patterns in the graph. Identify any unusual or unexpected fluctuations in the time series.
+
+```{r}
+#Including the required library
+
+library(fma)
+library(fpp)
+
+# Given data below (data set fancy) concern the monthly sales figures of a shop
+fancy
+
+
+#time plot of the data
+plot(fancy,ylab="Sales Volume", xlab="Year", main="Fig 1: Monthly Sales figures of Shop")
+
+```
+
+###Fig 1
+In this case, it appears that here there is a clear and increasing trend. There is also a strong seasonal pattern that increases in size as the level of the series increases. The sudden drop in the month March. Any forecasts of this series would need to capture the seasonal pattern, and the fact that the trend is changing slowly.Also, there is a spike in sales  is caused by a Christmas Season at the end of the calendar year Like December.
+
+
+##b. Explain why it is necessary to take logarithms of these data before fitting a model.
+
+It appears that an additive model is not appropriate for describing this time series, since the size of the seasonal fluctuations and random fluctuations seem to increase with the level of the time series. Thus, we may need to transform the time series in order to get a transformed time series that can be described using an additive model. For example, we can transform the time series by calculating the natural log of the original data.
+
+```{r}
+logsfancytimeseries <- log(fancy)
+plot.ts(logsfancytimeseries)
+
+```
+
+Here we can see that the size of the seasonal fluctuations and random fluctuations in the log-transformed time series seem to be roughly constant over time, and do not depend on the level of the time series. Thus, the log-transformed time series can probably be described using an additive model.
+
+
+##c. Use R to fit a regression model to the logarithms of these sales data with a linear trend, seasonal dummies and a "surfing festival" dummy variable.
+
+```{r}
+library(fpp)
+logsfancytimeseries = log(fancy)
+dummy_surfing_festival = rep(0, length(fancy))
+dummy_surfing_festival[seq_along(dummy_surfing_festival)%%12 == 3] <- 1
+dummy_surfing_festival[3] <- 0 #festival started one year later
+dummy_surfing_festival = ts(dummy_surfing_festival, freq = 12, start=c(1987,1))
+fancy_fit_data <- data.frame(
+  logsfancytimeseries,
+  dummy_surfing_festival
+)
+
+fancy_fit = tslm(logsfancytimeseries ~ trend + season + dummy_surfing_festival, data=fancy_fit_data)
+#forecast(fancy_fit) Giving error
+```
+
+if we omit the dummy_surfing_festival variable, the forecast works fine:
+
+```{r}
+
+fancy_fit2 = tslm(logsfancytimeseries ~ trend + season, data=fancy_fit_data)
+forecast(fancy_fit2)
+```
+
+While the forecast function is very smart and knows how to extrapolate your trend and season variables, it unfortunately knows nothing about surfing festivals.We need to tell the forecast function when the surfing festival will occur in the future!
+
+For example, here's a forecast assuming the surfing festival is cancelled, and never happens again:
+
+```{r}
+future_data <- data.frame(
+  dummy_surfing_festival = rep(0, 12)
+)
+forecast(fancy_fit, newdata=future_data)
+```
+
+
+##d. Plot the residuals against time and against the fitted values. Do these plots reveal any problems with the model?
+
+```{r}
+par(mfrow=c(2,1))
+plot(residuals(fancy_fit), type='p', main="Fig 2 : produces the residual vs time")
+abline(a=0,b=0,col='red')
+
+plot(as.numeric(fitted(fancy_fit)), residuals(fancy_fit), type='p', main="Fig 3: produces the residual vs fitted plot")
+abline(a=0,b=0,col='red')          
+
+```
+
+###Fig 2 : 
+The residuals plotted against time also vary from -0.03 to 0.04. There is a trend for the residuals to increase from 1991 to 1994. The residuals appear random prior to this.
+
+###Fig 3: 
+The residuals plotted against the fitted values show no pattern and vary from -0.03 to 0.04. Such a plot shows unbiased and homoscedastic residuals.
+
+
+##e. Do boxplots of the residuals for each month. Does this reveal any problems with the model?
+
+###Box plot across months will give us a sense on seasonal effect
+```{r}
+par(mfrow=c(1,1))
+boxplot(resid(fancy_fit) ~ cycle(resid(fancy_fit)), main="Fig 4: Boxplot of the residuals", xlab="Month", ylab="Residuals")
+```
+
+###Fig 4 :
+The variance and the mean value in August and October is much higher than rest of the months.
+Even though the mean value of each month is quite different their variance is small. Hence, we have strong seasonal effect with a cycle of 12 months or less.
+Also, this implies that the model lacks in capturing information relevant to the given time period.
+
+
+##f. What do the values of the coefficients tell you about each variable?
+
+```{r}
+#coefficients
+
+fancy_fit
+```
+
+In this it is clear that the year progresses the size of the coefficient is increasing positive values which interprets that they are statistically significant values. coefficients tells how the models take the contribution of month to the conditional mean of the model.However, the 'dummy_surfing_festival' is alos inculded in this.
+
+##g. What does the Durbin-Watson statistic tell you about your model?
+
+```{r}
+dwtest(fancy_fit, alt="two.sided")
+
+```
+
+In R, the function durbinWatsonTest() verifies if the residuals from a linear model are correlated or not:
+The null hypothesis (H0) is that there is no correlation among residuals, i.e., they are independent.The alternative hypothesis (Ha) is that residuals are autocorrelated.As the p value was near from zero it means one can reject the null.
+
+Hence here this shows that the residuals are autocorrelated and so the p-value is bellow the level zero, then it means it accepts the alternative hypothesis and rejects the null hypothesis.
+
+
+##h. Regardless of your answers to the above questions, use your regression model to predict the monthly sales for 1994, 1995, and 1996. Produce prediction Intervals for each of your forecasts.
+
+Prediction Intervals for each of your forecasts is 
+```{r}
+my_future_data <- data.frame(
+  dummy_surfing_festival = rep(0, 36)
+)
+preds_fancy_fit <- forecast(fancy_fit, newdata=my_future_data)
+preds_fancy_fit
+```
+
+
+##i. Transform your predictions and Intervals to obtain predictions and Intervals for the raw data.
+
+```{r}
+data_f <- as.data.frame(preds_fancy_fit)
+data_f <- exp(data_f)
+data_f
+```
+
+##j. How could you improve these predictions by modifying the model?
+
+```{r}
+
+```
+
+Since in durbinWatsonTest() shows that the residuals are autocorrelated so dynamic-regression model which improves these predictions.
+
+```{r}
+
+```
+
+
+
+#Question 2:
+The data below (data set texasgas) shows the demand for natural gas and the price of natural gas for 20 towns in Texas in 1969.
+
+##a. Do a scatterplot of consumption against price. The data are clearly not linear. Three possible nonlinear models for the data are given below
+
+```{r}
+#Loading the data and lib
+library(fma)
+library(fpp)
+library(segmented)
+```
+
+```{r}
+par(mfrow=c(1,1))
+my_texasgas_data <- (texasgas)
+plot(my_texasgas_data$price, my_texasgas_data$consumption,main="Fig : 5 Demand of Natural Gas" , xlab = "Price of Natural Gas", ylab = "Consumption")
+```
+
+
+##b. Can you explain why the slope of the fitted line should change with P?
+```{r}
+
+```
+All the models are non-linear where the second model divides the data into two sections, depending on whether the price is above or below 60 cents per 1,000 cubic feet. Since the data is non-linear its required to change the slope of the fitted line should change with to cpature information in the models deployed further.
+
+
+
+##c. Fit the three models and find the coefficients, and residual variance in each case.
+
+###Model 1: Basic Linear regression
+```{r}
+fit_linear <- lm(consumption ~ exp(price), my_texasgas_data)
+fit_linear
+```
+
+The slope for price is -1.642. we have the Residual variance as;
+```{r}
+
+(summary(fit_linear)$sigma)**2 
+
+```
+
+###Model 2: piecewise Linear regression
+
+```{r}
+
+piecewise_fit_linear <- lm(consumption ~ price, my_texasgas_data)
+Piecewise_model <- segmented(piecewise_fit_linear, seg.Z = ~price, psi=60)
+
+slope(Piecewise_model)
+```
+
+The slope for B1 is -3.147 and B2 for it's -0.3075. we have the Residual variance as;
+
+```{r}
+
+(summary(Piecewise_model)$sigma)**2 
+
+```
+
+Comparing the  residual variance of Model 1 with that of Model 2 it seems the  residual variance is more than 10 time of its value in Model 2  respectively.
+
+
+###Model 3: Polynomial regression
+
+```{r}
+Polinomial_fit <- lm(consumption ~ poly(price, 2), my_texasgas_data)
+
+```
+
+we have the Residual variance as;
+
+```{r}
+(summary(Polinomial_fit)$sigma)**2
+```
+
+A polynomial fit greatly reduces residual variance from the Model 1.
+
+
+
+##d. For each model, find the value of R2 and AIC, and produce a residual plot. Comment on the adequacy of the three models.
+
+
+###Model 1: Basic Linear regression
+
+### Adjusted R-squared: -0.004 
+### AIC: 200.736
+```{r}
+resid <- residuals(fit_linear)
+plot(fit_linear$fitted.values, resid, ylab='Residuals', xlab='fitted values',
+     main='Fig 6 : Model 1 linear regression')
+abline(a=0,b=0,col='red') 
+```
+
+
+###Model 2: piecewise Linear regression
+
+### Adjusted R-squared:  0.847
+### AIC: 164.756
+```{r}
+resid <- residuals(Piecewise_model)
+plot(Piecewise_model$fitted.values, resid, ylab='residuals', xlab='fitted values', 
+     main='Fig 7 : Model 2 piecewise linear regression')
+abline(a=0,b=0,col='red') 
+```
+
+###Model 3: Polynomial regression
+
+### Adjusted R-squared:  0.812
+### AIC: 168.116
+
+```{r}
+resid <- residuals(Polinomial_fit)
+plot(Polinomial_fit$fitted.values, resid, ylab='residuals', xlab='fitted values', 
+     main='Fig 8 : Model 3 polynomial linear regression')
+abline(a=0,b=0,col='red') 
+```
+
+Resudial plots of the above Model 1 , Model 2 ,Model 3  respectively show heteroskedasticity. 
+Models 1 linear regression model residual plot shows  most of these predictions are wildly inaccurate. 
+
+Model 2 piecewise model has a slightly larger R square and a slightly lower AIC 
+
+Models 3 polynomial model has less R square value which make the better model among others.
+
+##e.For prices 40, 60, 80, 100, and 120 cents per 1,000 cubic feet, compute the forecasted per capita demand using the best model of the three above.
+
+```{r}
+my_new_data <- data.frame(price=c(40, 60, 80, 100, 120))
+predict(Piecewise_model, my_new_data)
+
+```
+
+##f. Compute 95% prediction Intervals. Make a graph of these prediction Intervals and discuss their interpretation.
+
+```{r}
+my_new_data_X <- seq(min(my_new_data), max(my_new_data), length.out=5)
+Intervals <- predict(Piecewise_model, my_new_data, interval="predict") 
+
+plot(consumption ~ price, data = my_texasgas_data, type = 'n')
+
+polygon(c(rev(my_new_data_X), my_new_data_X), c(rev(Intervals[ ,3]), Intervals[ ,2]), col = 'grey80', border = NA)
+```
+
+In this it is seen that the prediction levels are wide which can interprets only an idea of how much energy consumption will be in demand in near future.
+
+
+##g. What is the correlation between P and P2? Does this suggest any general problem to be considered in dealing with polynomial regressions---especially of higher orders?
+
+```{r}
+
+```
+
+Consider how large the size of the predictor(s) will be when incorporating higher degree terms as this may cause numerical overflow for the statistical software being used.Do not go strictly by low p-values to incorporate a higher degree term, but rather just use these to support your model only if the resulting residual plots looks reasonable. This is an example of a situation where you need to determine "practical significance" versus "statistical significance".
+
+
+
